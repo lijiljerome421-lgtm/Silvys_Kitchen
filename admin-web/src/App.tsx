@@ -16,9 +16,7 @@ import {
   Search
 } from 'lucide-react';
 
-const BACKEND_HOST = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-  ? 'http://localhost:8080'
-  : `${window.location.protocol}//${window.location.hostname}:8080`;
+const BACKEND_HOST = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const API_BASE_URL = `${BACKEND_HOST}/api/products`;
 const LOGIN_API_URL = `${BACKEND_HOST}/api/admin/login`;
@@ -35,12 +33,20 @@ const getImageUrl = (url: string | undefined): string => {
   return url;
 };
 
+const getAuthHeaders = (extraHeaders: Record<string, string> = {}) => {
+  const token = sessionStorage.getItem('silvy_admin_token');
+  return {
+    ...extraHeaders,
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  };
+};
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return !!sessionStorage.getItem('silvy_admin_token');
   });
-  const [username, setUsername] = useState<string>('admin');
-  const [password, setPassword] = useState<string>('silvy123');
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
 
   const [activeTab, setActiveTab] = useState<'products' | 'reviews'>('products');
 
@@ -59,6 +65,15 @@ export default function App() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
+  const handleUnauthorized = (res: Response) => {
+    if (res.status === 401) {
+      sessionStorage.removeItem('silvy_admin_token');
+      setIsAuthenticated(false);
+      return true;
+    }
+    return false;
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       loadProducts();
@@ -68,6 +83,10 @@ export default function App() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      alert('Please enter username and password');
+      return;
+    }
     try {
       const res = await fetch(LOGIN_API_URL, {
         method: 'POST',
@@ -76,25 +95,42 @@ export default function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        sessionStorage.setItem('silvy_admin_token', data.token || 'token_123');
-        setIsAuthenticated(true);
-        return;
+        if (data.token) {
+          sessionStorage.setItem('silvy_admin_token', data.token);
+          setIsAuthenticated(true);
+          setPassword('');
+          return;
+        }
       }
+      const errData = await res.json().catch(() => ({}));
+      alert(errData.message || 'Invalid admin credentials');
     } catch (err) {
-      console.warn('Backend login API offline, using local credentials:', err);
+      console.error('Login error:', err);
+      alert('Could not connect to authentication server');
     }
+  };
 
-    if (username === 'admin' && password === 'silvy123') {
-      sessionStorage.setItem('silvy_admin_token', 'silvy_admin_token_demo');
-      setIsAuthenticated(true);
-    } else {
-      alert('Invalid admin credentials! Use admin / silvy123');
+  const handleLogout = async () => {
+    const token = sessionStorage.getItem('silvy_admin_token');
+    if (token) {
+      try {
+        await fetch(`${BACKEND_HOST}/api/admin/logout`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        });
+      } catch (err) {}
     }
+    sessionStorage.removeItem('silvy_admin_token');
+    setIsAuthenticated(false);
+    setPassword('');
   };
 
   const loadProducts = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/all`);
+      const res = await fetch(`${API_BASE_URL}/admin/all`, {
+        headers: getAuthHeaders(),
+      });
+      if (handleUnauthorized(res)) return;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -109,7 +145,10 @@ export default function App() {
 
   const loadReviews = async () => {
     try {
-      const res = await fetch(REVIEWS_ADMIN_API);
+      const res = await fetch(REVIEWS_ADMIN_API, {
+        headers: getAuthHeaders(),
+      });
+      if (handleUnauthorized(res)) return;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -124,7 +163,11 @@ export default function App() {
 
   const handleToggleStock = async (id: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}/toggle-availability`, { method: 'PATCH' });
+      const res = await fetch(`${API_BASE_URL}/${id}/toggle-availability`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+      });
+      if (handleUnauthorized(res)) return;
       if (res.ok) {
         await loadProducts();
       }
@@ -136,7 +179,11 @@ export default function App() {
   const handleDeleteProduct = async (id: number) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (handleUnauthorized(res)) return;
       if (res.ok) {
         await loadProducts();
       }
@@ -209,9 +256,10 @@ const compressImageFile = (file: File): Promise<Blob> => {
       if (editingProduct.id) {
         const res = await fetch(`${API_BASE_URL}/${editingProduct.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(editingProduct),
         });
+        if (handleUnauthorized(res)) return;
         if (res.ok) {
           savedProduct = await res.json();
         } else {
@@ -233,9 +281,10 @@ const compressImageFile = (file: File): Promise<Blob> => {
         };
         const res = await fetch(API_BASE_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(newProd),
         });
+        if (handleUnauthorized(res)) return;
         if (res.ok) {
           savedProduct = await res.json();
         } else {
@@ -253,9 +302,10 @@ const compressImageFile = (file: File): Promise<Blob> => {
 
         const imgRes = await fetch(`${API_BASE_URL}/${targetId}/image`, {
           method: 'POST',
+          headers: getAuthHeaders(),
           body: formData,
         });
-
+        if (handleUnauthorized(imgRes)) return;
         if (!imgRes.ok) {
           const errText = await imgRes.text();
           throw new Error(`Failed to upload image (${imgRes.status}): ${errText}`);
@@ -278,28 +328,46 @@ const compressImageFile = (file: File): Promise<Blob> => {
 
   // Review Admin Actions
   const handleApproveReview = async (id: number) => {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, approved: true } : r))
-    );
     try {
-      await fetch(`${REVIEWS_ADMIN_API}/${id}/approve`, { method: 'PATCH' });
+      const res = await fetch(`${REVIEWS_ADMIN_API}/${id}/approve`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+      });
+      if (handleUnauthorized(res)) return;
+      if (res.ok) {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, approved: true } : r))
+        );
+      }
     } catch (err) {}
   };
 
   const handleHideReview = async (id: number) => {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, approved: false } : r))
-    );
     try {
-      await fetch(`${REVIEWS_ADMIN_API}/${id}/hide`, { method: 'PATCH' });
+      const res = await fetch(`${REVIEWS_ADMIN_API}/${id}/hide`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+      });
+      if (handleUnauthorized(res)) return;
+      if (res.ok) {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, approved: false } : r))
+        );
+      }
     } catch (err) {}
   };
 
   const handleDeleteReview = async (id: number) => {
     if (!confirm('Are you sure you want to delete this review note?')) return;
-    setReviews((prev) => prev.filter((r) => r.id !== id));
     try {
-      await fetch(`${REVIEWS_ADMIN_API}/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${REVIEWS_ADMIN_API}/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (handleUnauthorized(res)) return;
+      if (res.ok) {
+        setReviews((prev) => prev.filter((r) => r.id !== id));
+      }
     } catch (err) {}
   };
 
@@ -385,10 +453,7 @@ const compressImageFile = (file: File): Promise<Blob> => {
         </div>
 
         <button
-          onClick={() => {
-            sessionStorage.removeItem('silvy_admin_token');
-            setIsAuthenticated(false);
-          }}
+          onClick={handleLogout}
           className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1 transition-colors"
           title="Sign Out"
         >

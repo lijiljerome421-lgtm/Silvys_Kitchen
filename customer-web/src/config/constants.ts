@@ -1,7 +1,7 @@
 export const WHATSAPP_PHONE = '917639164647';
 export const WHATSAPP_DISPLAY_PHONE = '+91 7639164647';
 
-export const BACKEND_HOST = window.location.hostname === 'localhost' ? 'http://localhost:8080' : `${window.location.protocol}//${window.location.hostname}:8080`;
+export const BACKEND_HOST = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 export const API_BASE_URL = `${BACKEND_HOST}/api/products`;
 export const REVIEWS_API_URL = `${BACKEND_HOST}/api/reviews`;
 

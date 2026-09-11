@@ -25,12 +25,28 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private ReviewRepository reviewRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.admin.username:admin}")
+    private String adminUsername;
+
+    @org.springframework.beans.factory.annotation.Value("${app.admin.password:silvy123}")
+    private String adminPassword;
+
+    private final org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+
     @Override
     public void run(String... args) throws Exception {
-        // Seed default Admin User if not present
-        if (adminUserRepository.findByUsername("admin").isEmpty()) {
-            adminUserRepository.save(new AdminUser("admin", "silvy123"));
-            System.out.println(">>> Seeded default admin user: admin / silvy123");
+        // Seed default Admin User with BCrypt password hashing if not present
+        java.util.Optional<AdminUser> existingAdmin = adminUserRepository.findByUsername(adminUsername);
+        if (existingAdmin.isEmpty()) {
+            adminUserRepository.save(new AdminUser(adminUsername, passwordEncoder.encode(adminPassword)));
+            System.out.println(">>> Seeded default admin user: " + adminUsername);
+        } else {
+            AdminUser user = existingAdmin.get();
+            if (!user.getPassword().startsWith("$2a$") && !user.getPassword().startsWith("$2b$")) {
+                user.setPassword(passwordEncoder.encode(adminPassword));
+                adminUserRepository.save(user);
+                System.out.println(">>> Upgraded admin user password to BCrypt hash");
+            }
         }
 
         // Seed initial products if database is empty
