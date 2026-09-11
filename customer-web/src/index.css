@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-parchment text-espresso-light font-body antialiased selection:bg-rattan-gold/30 selection:text-espresso;
+    background-image: radial-gradient(#d49a3e18 0.8px, transparent 0.8px), radial-gradient(#344d2912 0.8px, #faf6ee 0.8px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-heading text-espresso font-bold tracking-tight;
+  }
+}
+
+/* Custom organic paper & botanical accents */
+.paper-texture {
+  background-color: #FAF6EE;
+  background-image: radial-gradient(#d49a3e20 0.7px, transparent 0.7px), radial-gradient(#344d2915 0.7px, #faf6ee 0.7px);
+  background-size: 20px 20px;
+}
+
+.botanical-border {
+  border-image: linear-gradient(to right, #344D29, #D49A3E, #344D29) 1;
+}
+
+/* Glassmorphism parchment card */
+.card-parchment {
+  background: rgba(251, 248, 242, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid #C8B9A3;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF6EE;
+}
+::-webkit-scrollbar-thumb {
+  background: #C8B9A3;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7C5335;
+}

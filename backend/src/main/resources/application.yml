@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: silvys-kitchen-backend
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+  # Database configuration: Default to PostgreSQL when DB environment variables are supplied, with H2 fallback for local dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:silvyskitchendb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+  jpa:
+    database-platform: ${SPRING_JPA_DIALECT:org.hibernate.dialect.H2Dialect}
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# Configurable WhatsApp Business Phone Number
+app:
+  whatsapp:
+    phone-number: ${WHATSAPP_PHONE_NUMBER:919876543210}
+
+logging:
+  level:
+    com.silvyskitchen: DEBUG
+    org.springframework.web: INFO
