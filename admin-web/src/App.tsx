@@ -127,14 +127,15 @@ export default function App() {
 
   const loadProducts = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/all`, {
+      const res = await fetch(API_BASE_URL, {
         headers: getAuthHeaders(),
       });
       if (handleUnauthorized(res)) return;
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) {
-          setProducts(data);
+        const list = Array.isArray(data) ? data : (data && data.success && Array.isArray(data.data) ? data.data : null);
+        if (list) {
+          setProducts(list);
           return;
         }
       }
@@ -151,8 +152,9 @@ export default function App() {
       if (handleUnauthorized(res)) return;
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) {
-          setReviews(data);
+        const list = Array.isArray(data) ? data : (data && data.success && Array.isArray(data.data) ? data.data : null);
+        if (list) {
+          setReviews(list);
           return;
         }
       }
@@ -162,10 +164,13 @@ export default function App() {
   };
 
   const handleToggleStock = async (id: number) => {
+    const product = products.find((p) => p.id === id);
+    if (!product) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}/toggle-availability`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ available: !product.available }),
       });
       if (handleUnauthorized(res)) return;
       if (res.ok) {
@@ -200,123 +205,129 @@ export default function App() {
     }
   };
 
-const compressImageFile = (file: File): Promise<Blob> => {
-  return new Promise((resolve) => {
-    if (!file.type.startsWith('image/')) {
-      resolve(file);
-      return;
-    }
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const canvas = document.createElement('canvas');
-      const maxDim = 1200;
-      let width = img.width;
-      let height = img.height;
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            resolve(blob || file);
-          },
-          'image/jpeg',
-          0.85
-        );
-      } else {
+  const compressImageFile = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
         resolve(file);
+        return;
       }
-    };
-    img.onerror = () => resolve(file);
-    img.src = url;
-  });
-};
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        const maxDim = 1200;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              resolve(blob || file);
+            },
+            'image/jpeg',
+            0.85
+          );
+        } else {
+          resolve(file);
+        }
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
+  };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingProduct?.name || !editingProduct?.price) return;
+    if (!editingProduct?.name || editingProduct?.price === undefined || editingProduct?.price === null) return;
 
     setIsSaving(true);
 
-    let savedProduct: Product | null = null;
-
     try {
-      if (editingProduct.id) {
-        const res = await fetch(`${API_BASE_URL}/${editingProduct.id}`, {
-          method: 'PUT',
-          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify(editingProduct),
-        });
-        if (handleUnauthorized(res)) return;
-        if (res.ok) {
-          savedProduct = await res.json();
-        } else {
-          const errText = await res.text();
-          throw new Error(`Failed to update product (${res.status}): ${errText}`);
-        }
-      } else {
-        const newProd = {
-          name: editingProduct.name || '',
-          malayalamName: editingProduct.malayalamName || '',
-          category: editingProduct.category || 'Pickles',
-          price: Number(editingProduct.price) || 0,
-          unit: editingProduct.unit || '500g Jar',
-          preparationTime: editingProduct.preparationTime || 'Made in small batches',
-          description: editingProduct.description || '',
-          imageUrl: editingProduct.imageUrl || '',
-          available: editingProduct.available !== false,
-          featured: !!editingProduct.featured,
-        };
-        const res = await fetch(API_BASE_URL, {
-          method: 'POST',
-          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify(newProd),
-        });
-        if (handleUnauthorized(res)) return;
-        if (res.ok) {
-          savedProduct = await res.json();
-        } else {
-          const errText = await res.text();
-          throw new Error(`Failed to create product (${res.status}): ${errText}`);
-        }
-      }
+      let imageUrlToSave = editingProduct.imageUrl || '';
 
-      const targetId = savedProduct?.id || editingProduct.id;
-
-      if (targetId && selectedImageFile) {
+      if (selectedImageFile) {
         const compressedBlob = await compressImageFile(selectedImageFile);
         const formData = new FormData();
         formData.append('file', compressedBlob, selectedImageFile.name || 'image.jpg');
 
-        const imgRes = await fetch(`${API_BASE_URL}/${targetId}/image`, {
+        const uploadRes = await fetch(`${BACKEND_HOST}/api/admin/upload-image`, {
           method: 'POST',
           headers: getAuthHeaders(),
           body: formData,
         });
-        if (handleUnauthorized(imgRes)) return;
-        if (!imgRes.ok) {
-          const errText = await imgRes.text();
-          throw new Error(`Failed to upload image (${imgRes.status}): ${errText}`);
+        if (handleUnauthorized(uploadRes)) return;
+
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          if (uploadData.success && uploadData.data?.secure_url) {
+            imageUrlToSave = uploadData.data.secure_url;
+          } else {
+            throw new Error(uploadData.error || 'Cloudinary image upload failed');
+          }
+        } else {
+          const errData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || `Image upload failed (${uploadRes.status})`);
         }
       }
 
-      // Re-fetch products directly from Spring Boot backend DB to guarantee 100% sync
+      const categoryUpper = (editingProduct.category || 'PICKLES').toUpperCase();
+      const productPayload = {
+        name: editingProduct.name || '',
+        malayalam_name: editingProduct.malayalamName || null,
+        malayalamName: editingProduct.malayalamName || null,
+        category: categoryUpper,
+        price: Number(editingProduct.price) || 0,
+        unit: editingProduct.unit || '500g Jar',
+        preparation_time: editingProduct.preparationTime || 'Made in small batches',
+        preparationTime: editingProduct.preparationTime || 'Made in small batches',
+        description: editingProduct.description || '',
+        image_url: imageUrlToSave,
+        imageUrl: imageUrlToSave,
+        available: editingProduct.available !== false,
+        featured: !!editingProduct.featured,
+      };
+
+      if (editingProduct.id) {
+        const res = await fetch(`${API_BASE_URL}/${editingProduct.id}`, {
+          method: 'PUT',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(productPayload),
+        });
+        if (handleUnauthorized(res)) return;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || `Failed to update product (${res.status})`);
+        }
+      } else {
+        const res = await fetch(API_BASE_URL, {
+          method: 'POST',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(productPayload),
+        });
+        if (handleUnauthorized(res)) return;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || `Failed to create product (${res.status})`);
+        }
+      }
+
       await loadProducts();
     } catch (err: any) {
-      console.error('Error saving product to backend DB:', err);
-      alert(`Could not connect or save to Spring Boot backend database: ${err?.message || err}`);
+      console.error('Error saving product:', err);
+      alert(`Error saving product: ${err?.message || err}`);
     } finally {
       setIsSaving(false);
       setIsModalOpen(false);

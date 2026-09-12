@@ -42,9 +42,12 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          customer_name: customerName.trim(),
           customerName: customerName.trim(),
           rating,
+          review_text: reviewText.trim(),
           reviewText: reviewText.trim(),
+          product_name: productName || undefined,
           productName: productName || undefined,
         }),
       });

@@ -52,8 +52,9 @@ export default function App() {
       const res = await fetch(API_BASE_URL);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) {
-          setProducts(data);
+        const list = Array.isArray(data) ? data : (data && data.success && Array.isArray(data.data) ? data.data : null);
+        if (list) {
+          setProducts(list);
           return;
         }
       }
@@ -67,8 +68,9 @@ export default function App() {
       const res = await fetch(REVIEWS_API_URL);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) {
-          setReviews(data);
+        const list = Array.isArray(data) ? data : (data && data.success && Array.isArray(data.data) ? data.data : null);
+        if (list) {
+          setReviews(list);
           return;
         }
       }

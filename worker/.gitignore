@@ -1,0 +1,4 @@
+# Cloudflare Worker local secrets and runtime state
+.dev.vars
+.dev.vars.*
+.wrangler/
