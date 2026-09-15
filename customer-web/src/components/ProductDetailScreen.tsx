@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Product, WeightOption, NutritionInfo, Review } from '../types';
 import { WHATSAPP_PHONE, REVIEWS_API_URL, getImageUrl } from '../config/constants';
 import { WhatsAppIcon } from './WhatsAppIcon';
-import { ArrowLeft, ShoppingCart, Minus, Plus, Info, Star, HeartHandshake } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Minus, Plus, Info, Star } from 'lucide-react';
 
 interface ProductDetailScreenProps {
   product: Product;
@@ -29,11 +29,22 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
 
   // Weight options setup
   const woList: WeightOption[] = product.weightOptions ?? product.weight_options ?? [];
+  
+  // Custom enquiry mode & category unit detection
+  const isPickle = product.category?.toLowerCase().includes('pickle') ?? false;
+  const customUnit = isPickle ? 'kg' : 'packs';
+  
+  const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
+  const [customQuantityStr, setCustomQuantityStr] = useState<string>(isPickle ? '1.5' : '50');
+
   const [selectedWeightOption, setSelectedWeightOption] = useState<WeightOption | null>(() => {
     return woList.length > 0 ? woList[0] : null;
   });
 
-  const activeUnit = selectedWeightOption ? selectedWeightOption.unit : (product.unit || '500g');
+  const activeUnit = isCustomMode 
+    ? `Custom (${customQuantityStr} ${customUnit})` 
+    : (selectedWeightOption ? selectedWeightOption.unit : (product.unit || '500g'));
+    
   const activePrice = selectedWeightOption ? Number(selectedWeightOption.price) : Number(product.price);
 
   const [quantity, setQuantity] = useState<number>(1);
@@ -62,13 +73,17 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
   };
 
   const handleOrderWhatsApp = () => {
-    const msg = `Hello Silvy's Kitchen! 👋\n\nI would like to order:\n*${product.name}* (${activeUnit}) × ${quantity}\nTotal Price: ₹${activePrice * quantity}\n\nPlease confirm availability & delivery details. Thank you!`;
+    const msg = `Hello Silvy's Kitchen! 👋\n\nI would like to order:\n• *${product.name}* (${activeUnit}) × ${quantity}\nTotal Price: ₹${activePrice * quantity}\n\nPlease confirm availability & delivery details. Thank you!`;
     const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
 
   const handleCustomBulkEnquiryWhatsApp = () => {
-    const msg = `Hello Silvy's Kitchen! 👋\n\nI have a custom quantity / bulk order enquiry for *${product.name}*.\nPlease let me know pricing and delivery details for custom weight options. Thank you!`;
+    const rawVal = customQuantityStr.trim();
+    const parsedVal = parseFloat(rawVal);
+    const displayQty = !isNaN(parsedVal) && parsedVal > 0 ? rawVal : (isPickle ? '1.5' : '50');
+
+    const msg = `Hello Silvy's Kitchen!\n\nI'm interested in ordering:\n\n• *${product.name}*\n• Quantity: ${displayQty} ${customUnit}\n\nPlease let me know the price and availability.`;
     const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
@@ -78,7 +93,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
   const hasNutritionInfo = nutInfo !== null && typeof nutInfo === 'object' && Object.keys(nutInfo).length > 0;
 
   // Standard ingredients fallback
-  const defaultIngredients = product.category?.toLowerCase().includes('pickle')
+  const defaultIngredients = isPickle
     ? 'Tender meat/fish pieces, pure sesame oil, fried garlic, ginger, curry leaves, fenugreek, red chili, vinegar, salt.'
     : 'Rice flour, fresh coconut milk, sesame seeds, cumin, coconut oil, cardamom, salt.';
 
@@ -101,7 +116,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         >
           <ShoppingCart className="w-6 h-6" />
           {cartCount > 0 && (
-            <span className="absolute top-0 right-0 bg-olive-deep text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
+            <span className="absolute top-0 right-0 bg-emerald-900 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
               {cartCount}
             </span>
           )}
@@ -163,14 +178,14 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
 
       {/* Product Content */}
       <div className="p-5 space-y-5 flex-grow">
-        {/* Title & Short Description */}
+        {/* Title & Price */}
         <div>
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-heading text-2xl font-bold text-espresso leading-snug">
               {product.name}
             </h2>
-            <span className="font-heading text-2xl font-bold text-olive-deep shrink-0">
-              ₹{activePrice}
+            <span className="font-heading text-2xl font-bold text-emerald-900 shrink-0">
+              {isCustomMode ? 'Custom Quote' : `₹${activePrice}`}
             </span>
           </div>
 
@@ -184,31 +199,173 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
           </p>
         </div>
 
-        {/* FLEXIBLE WEIGHT & QUANTITY OPTIONS SELECTOR */}
-        {woList.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-espresso uppercase tracking-wider block">
-              Select Weight / Quantity Option
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {woList.map((opt, idx) => {
-                const isSelected = selectedWeightOption?.unit === opt.unit;
+        {/* HORIZONTAL WEIGHT OPTIONS LAYOUT */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-espresso uppercase tracking-wider block">
+              SELECT WEIGHT
+            </span>
+            {isCustomMode && (
+              <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                Bulk Enquiry Mode
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-row overflow-x-auto gap-3 pb-2 pt-1 scrollbar-none snap-x">
+            {/* Configured Admin Weight Options */}
+            {woList.length > 0 ? (
+              woList.map((opt, idx) => {
+                const isSelected = !isCustomMode && selectedWeightOption?.unit === opt.unit;
                 return (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSelectedWeightOption(opt)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                    onClick={() => {
+                      setIsCustomMode(false);
+                      setSelectedWeightOption(opt);
+                    }}
+                    className={`shrink-0 snap-start px-4 py-3 rounded-2xl text-center border transition-all cursor-pointer min-w-[96px] ${
                       isSelected
-                        ? 'bg-olive-deep text-white border-olive-deep shadow-xs'
-                        : 'bg-parchment-card text-espresso border-border-warm/70 hover:bg-parchment-deep'
+                        ? 'bg-emerald-900 text-amber-50 border-emerald-900 shadow-md ring-2 ring-emerald-900/20'
+                        : 'bg-parchment-card text-espresso border-border-warm/70 hover:bg-parchment-deep hover:border-border-warm'
                     }`}
                   >
-                    <span>{opt.unit}</span>
-                    <span className="ml-1.5 opacity-90 font-heading">₹{opt.price}</span>
+                    <span className="block text-xs font-bold font-sans tracking-wide">
+                      {opt.unit}
+                    </span>
+                    <span className="block text-sm font-bold font-heading mt-1 opacity-90">
+                      ₹{opt.price}
+                    </span>
                   </button>
                 );
-              })}
+              })
+            ) : (
+              /* Fallback single weight option when woList is empty */
+              <button
+                type="button"
+                onClick={() => setIsCustomMode(false)}
+                className={`shrink-0 snap-start px-4 py-3 rounded-2xl text-center border transition-all cursor-pointer min-w-[96px] ${
+                  !isCustomMode
+                    ? 'bg-emerald-900 text-amber-50 border-emerald-900 shadow-md ring-2 ring-emerald-900/20'
+                    : 'bg-parchment-card text-espresso border-border-warm/70 hover:bg-parchment-deep'
+                }`}
+              >
+                <span className="block text-xs font-bold font-sans tracking-wide">
+                  {product.unit || '500g'}
+                </span>
+                <span className="block text-sm font-bold font-heading mt-1 opacity-90">
+                  ₹{product.price}
+                </span>
+              </button>
+            )}
+
+            {/* Custom / Bulk Option Card */}
+            <button
+              type="button"
+              onClick={() => setIsCustomMode(true)}
+              className={`shrink-0 snap-start px-4 py-3 rounded-2xl text-center border transition-all cursor-pointer min-w-[96px] ${
+                isCustomMode
+                  ? 'bg-emerald-900 text-amber-50 border-emerald-900 shadow-md ring-2 ring-emerald-900/20'
+                  : 'bg-parchment-card text-espresso border-border-warm/70 hover:bg-parchment-deep'
+              }`}
+            >
+              <span className="block text-xs font-bold font-sans tracking-wide">
+                Custom / Bulk
+              </span>
+              <span className="block text-xs font-semibold font-heading mt-1 opacity-90">
+                Enquire
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* CUSTOM QUANTITY INPUT (When in Custom Mode) */}
+        {isCustomMode && (
+          <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200/80 space-y-2">
+            <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider block">
+              CUSTOM / BULK ORDER
+            </span>
+            <span className="text-xs font-bold text-espresso block">
+              Quantity
+            </span>
+
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-[200px]">
+                <input
+                  type="number"
+                  step={isPickle ? "0.25" : "1"}
+                  min={isPickle ? "0.25" : "1"}
+                  max="100"
+                  value={customQuantityStr}
+                  onChange={(e) => setCustomQuantityStr(e.target.value)}
+                  placeholder={isPickle ? "1.5" : "50"}
+                  className="w-full bg-white border border-border-warm rounded-2xl px-4 py-2.5 text-base font-bold font-heading text-espresso focus:outline-none focus:ring-2 focus:ring-emerald-900/30 shadow-inner"
+                />
+                <span className="absolute right-4 top-3 text-xs font-bold text-espresso-muted pointer-events-none uppercase">
+                  {customUnit}
+                </span>
+              </div>
+
+              {/* Steppers */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cur = parseFloat(customQuantityStr) || (isPickle ? 1.5 : 10);
+                    const step = isPickle ? 0.5 : 5;
+                    const nextVal = Math.max(isPickle ? 0.25 : 1, Math.round((cur - step) * 100) / 100);
+                    setCustomQuantityStr(String(nextVal));
+                  }}
+                  className="w-9 h-9 rounded-xl bg-white border border-border-warm flex items-center justify-center font-bold text-espresso hover:bg-parchment active:scale-95 shadow-xs"
+                  aria-label="Decrease custom quantity"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cur = parseFloat(customQuantityStr) || 0;
+                    const step = isPickle ? 0.5 : 5;
+                    const nextVal = Math.round((cur + step) * 100) / 100;
+                    setCustomQuantityStr(String(nextVal));
+                  }}
+                  className="w-9 h-9 rounded-xl bg-white border border-border-warm flex items-center justify-center font-bold text-espresso hover:bg-parchment active:scale-95 shadow-xs"
+                  aria-label="Increase custom quantity"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* HORIZONTAL QUANTITY SELECTOR (For Standard Fixed Price Mode) */}
+        {!isCustomMode && isAvailable && (
+          <div className="space-y-1.5 pt-1">
+            <span className="text-xs font-bold text-espresso uppercase tracking-wider block">
+              Quantity
+            </span>
+            <div className="flex items-center justify-between bg-parchment-card border border-border-warm/80 rounded-2xl p-2 w-36 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="w-8 h-8 rounded-xl bg-white border border-border-warm flex items-center justify-center font-bold text-espresso hover:bg-parchment transition-colors active:scale-95"
+                aria-label="Decrease quantity"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="flex-1 text-center font-bold text-base font-heading text-espresso">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuantity(quantity + 1)}
+                className="w-8 h-8 rounded-xl bg-white border border-border-warm flex items-center justify-center font-bold text-espresso hover:bg-parchment transition-colors active:scale-95"
+                aria-label="Increase quantity"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )}
@@ -226,7 +383,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         {/* VERIFIED OPTIONAL NUTRITION PANEL */}
         {hasNutritionInfo && nutInfo && (
           <div className="bg-white p-3.5 rounded-2xl border border-border-warm/70 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-olive-deep uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 uppercase tracking-wider">
               <Info className="w-4 h-4 text-olive-leaf" />
               <span>Verified Nutrition Information</span>
             </div>
@@ -278,70 +435,48 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
           </div>
         )}
 
-        {/* Quantity Controls */}
-        {isAvailable && (
-          <div className="space-y-1 pt-1">
-            <span className="text-xs font-bold text-espresso uppercase tracking-wider block">
-              Quantity
-            </span>
-            <div className="flex items-center gap-4 bg-parchment-card border border-border-warm rounded-2xl p-2 max-w-[160px]">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-8 h-8 rounded-xl bg-white border border-border-warm flex items-center justify-center font-bold text-espresso hover:bg-parchment"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="flex-1 text-center font-bold text-base">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="w-8 h-8 rounded-xl bg-white border border-border-warm flex items-center justify-center font-bold text-espresso hover:bg-parchment"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
+        {/* ACTION BUTTONS & CTAs */}
         <div className="space-y-2.5 pt-2">
-          {/* Primary Add to Cart Button */}
-          <button
-            disabled={!isAvailable}
-            onClick={() => onAddToCart(product, activeUnit, activePrice, quantity)}
-            className={`w-full py-3.5 px-6 rounded-2xl font-bold text-sm shadow-warm-md flex items-center justify-center gap-2 transition-all ${
-              isAvailable
-                ? 'bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            <ShoppingCart className="w-5 h-5" />
-            <span>Add to Cart ({activeUnit} — ₹{activePrice * quantity})</span>
-          </button>
+          {!isCustomMode ? (
+            <>
+              {/* Primary Add to Cart Button */}
+              <button
+                disabled={!isAvailable}
+                onClick={() => onAddToCart(product, activeUnit, activePrice, quantity)}
+                className={`w-full py-3.5 px-6 rounded-2xl font-bold text-sm shadow-warm-md flex items-center justify-center gap-2 transition-all ${
+                  isAvailable
+                    ? 'bg-emerald-900 hover:bg-emerald-800 active:scale-95 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                <span>Add to Cart ({activeUnit} — ₹{activePrice * quantity})</span>
+              </button>
 
-          {/* Secondary Order on WhatsApp Button */}
-          <button
-            disabled={!isAvailable}
-            onClick={handleOrderWhatsApp}
-            className={`w-full py-3 px-6 rounded-2xl font-bold text-sm border flex items-center justify-center gap-2.5 transition-all ${
-              isAvailable
-                ? 'bg-white hover:bg-parchment-deep text-olive-deep border-olive-leaf/40 active:scale-95 shadow-xs'
-                : 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
-            }`}
-          >
-            <WhatsAppIcon className="text-[#25D366] w-5 h-5" />
-            <span>Order on WhatsApp</span>
-          </button>
-
-          {/* CUSTOM / BULK QUANTITY WHATSAPP ENQUIRY ACTION */}
-          <button
-            onClick={handleCustomBulkEnquiryWhatsApp}
-            className="w-full py-2.5 px-4 text-center text-xs font-semibold text-olive-leaf hover:text-olive-deep flex items-center justify-center gap-1.5 bg-parchment/40 hover:bg-parchment rounded-xl border border-border-warm/40"
-          >
-            <HeartHandshake className="w-4 h-4" />
-            <span>Need custom weight or bulk order (e.g. 5kg, 10kg)? Enquire on WhatsApp</span>
-          </button>
+              {/* Secondary Order on WhatsApp Button */}
+              <button
+                disabled={!isAvailable}
+                onClick={handleOrderWhatsApp}
+                className={`w-full py-3 px-6 rounded-2xl font-bold text-sm border flex items-center justify-center gap-2.5 transition-all ${
+                  isAvailable
+                    ? 'bg-white hover:bg-parchment-deep text-emerald-900 border-emerald-900/30 active:scale-95 shadow-xs'
+                    : 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed'
+                }`}
+              >
+                <WhatsAppIcon className="text-[#25D366] w-5 h-5" />
+                <span>Order on WhatsApp</span>
+              </button>
+            </>
+          ) : (
+            /* Custom Quantity / Bulk WhatsApp Enquiry CTA */
+            <button
+              onClick={handleCustomBulkEnquiryWhatsApp}
+              className="w-full py-3.5 px-6 rounded-2xl font-bold text-sm bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-warm-md flex items-center justify-center gap-2.5 transition-all active:scale-95"
+            >
+              <WhatsAppIcon className="text-white w-5 h-5" />
+              <span>Enquire on WhatsApp</span>
+            </button>
+          )}
         </div>
 
         {/* PRODUCT-SPECIFIC REVIEWS SECTION */}
@@ -376,3 +511,4 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
     </div>
   );
 };
+
