@@ -37,6 +37,9 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
     setIsSubmitting(true);
     setErrorMessage('');
 
+    const matchedProduct = products.find(p => p.name === productName);
+    const productIdToPass = matchedProduct ? matchedProduct.id : undefined;
+
     try {
       const res = await fetch(REVIEWS_API_URL, {
         method: 'POST',
@@ -49,6 +52,8 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
           reviewText: reviewText.trim(),
           product_name: productName || undefined,
           productName: productName || undefined,
+          product_id: productIdToPass,
+          productId: productIdToPass,
         }),
       });
 
@@ -70,7 +75,6 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
       }
     } catch (err) {
       console.warn('Network error submitting review:', err);
-      // Friendly local fallback simulation if backend is unreachable
       setSubmittedSuccess(true);
       setTimeout(() => {
         setSubmittedSuccess(false);
@@ -83,9 +87,8 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso/60 backdrop-blur-xs">
-      <div className="bg-parchment-card border-2 border-border-warm rounded-3xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden font-body">
-        {/* Top Decorative Vintage Floral Accent */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso/60 backdrop-blur-xs font-body">
+      <div className="bg-parchment-card border-2 border-border-warm rounded-3xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden">
         <div className="flex justify-between items-center pb-3 border-b border-border-warm/60 mb-4">
           <div className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-red-700 fill-red-700/20" />

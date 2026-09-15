@@ -4,8 +4,9 @@ export const WHATSAPP_DISPLAY_PHONE = '+91 7639164647';
 export const BACKEND_HOST = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 export const API_BASE_URL = `${BACKEND_HOST}/api/products`;
 export const REVIEWS_API_URL = `${BACKEND_HOST}/api/reviews`;
+export const PROMOTIONS_API_URL = `${BACKEND_HOST}/api/promotions`;
 
-export const getImageUrl = (url: string | undefined): string => {
+export const getImageUrl = (url: string | undefined | null): string => {
   if (!url) return 'assets/logo.jpg';
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;

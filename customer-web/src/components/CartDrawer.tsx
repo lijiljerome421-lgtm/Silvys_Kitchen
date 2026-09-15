@@ -1,14 +1,14 @@
 import React from 'react';
 import { CartItem } from '../types';
-import { WHATSAPP_PHONE } from '../config/constants';
+import { WHATSAPP_PHONE, getImageUrl } from '../config/constants';
 import { WhatsAppIcon } from './WhatsAppIcon';
 import { ArrowLeft, Trash2, Minus, Plus } from 'lucide-react';
 
 interface CartDrawerProps {
   cart: CartItem[];
   onBack: () => void;
-  onUpdateQuantity: (id: number, delta: number) => void;
-  onRemoveItem: (id: number) => void;
+  onUpdateQuantity: (cartItemId: string, delta: number) => void;
+  onRemoveItem: (cartItemId: string) => void;
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
@@ -17,7 +17,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onUpdateQuantity,
   onRemoveItem,
 }) => {
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.selectedPrice * item.quantity, 0);
 
   const handleOrderWhatsApp = () => {
     if (cart.length === 0) return;
@@ -25,9 +25,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     let msg = `Hello Silvy's Kitchen! 👋\n\nI would like to order:\n\n`;
 
     cart.forEach((item, index) => {
-      const unitStr = item.unit ? ` (${item.unit})` : ' (500g)';
+      const unitStr = item.selectedUnit ? ` (${item.selectedUnit})` : '';
       msg += `${index + 1}. *${item.name}*${unitStr} × ${item.quantity}\n`;
-      msg += `   ₹${item.price * item.quantity}\n\n`;
+      msg += `   ₹${item.selectedPrice * item.quantity}\n\n`;
     });
 
     msg += `*Total Amount:* ₹${cartTotal}\n\n`;
@@ -38,7 +38,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-parchment text-espresso flex flex-col max-w-md mx-auto relative pb-20 shadow-2xl">
+    <div className="min-h-screen bg-parchment text-espresso flex flex-col max-w-md mx-auto relative pb-20 shadow-2xl font-body">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-parchment/95 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-border-warm/40 shadow-xs">
         <button
@@ -68,12 +68,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         ) : (
           cart.map((item) => (
             <div
-              key={item.id}
+              key={item.cartItemId}
               className="bg-parchment-card border border-border-warm/60 rounded-2xl p-3 flex gap-3 items-center shadow-xs"
             >
               {/* Product Thumbnail */}
               <img
-                src={item.imageUrl}
+                src={getImageUrl(item.imageUrl)}
                 alt={item.name}
                 className="w-16 h-16 object-cover rounded-xl border border-border-warm/40 shrink-0 bg-white"
                 onError={(e) => {
@@ -88,7 +88,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     {item.name}
                   </h4>
                   <button
-                    onClick={() => onRemoveItem(item.id)}
+                    onClick={() => onRemoveItem(item.cartItemId)}
                     className="text-espresso-muted hover:text-red-700 p-0.5 transition-colors shrink-0"
                     aria-label="Remove item"
                   >
@@ -96,19 +96,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </button>
                 </div>
 
-                <div className="text-[11px] text-espresso-muted">
-                  {item.unit || '500g'}
+                <div className="text-[11px] text-espresso-muted font-bold">
+                  {item.selectedUnit}
                 </div>
 
                 <div className="text-xs font-semibold text-espresso mt-0.5">
-                  ₹{item.price} × {item.quantity}
+                  ₹{item.selectedPrice} × {item.quantity}
                 </div>
 
                 {/* Quantity adjusters */}
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex items-center gap-2 bg-parchment border border-border-warm/60 rounded-lg p-1">
                     <button
-                      onClick={() => onUpdateQuantity(item.id, -1)}
+                      onClick={() => onUpdateQuantity(item.cartItemId, -1)}
                       className="w-5 h-5 rounded bg-white border border-border-warm flex items-center justify-center text-espresso text-xs font-bold"
                     >
                       <Minus className="w-3 h-3" />
@@ -117,7 +117,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => onUpdateQuantity(item.id, 1)}
+                      onClick={() => onUpdateQuantity(item.cartItemId, 1)}
                       className="w-5 h-5 rounded bg-white border border-border-warm flex items-center justify-center text-espresso text-xs font-bold"
                     >
                       <Plus className="w-3 h-3" />
@@ -125,7 +125,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </div>
 
                   <div className="font-heading text-sm font-bold text-olive-deep ml-auto">
-                    ₹{item.price * item.quantity}
+                    ₹{item.selectedPrice * item.quantity}
                   </div>
                 </div>
               </div>

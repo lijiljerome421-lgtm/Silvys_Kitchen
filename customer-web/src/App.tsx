@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Product, CartItem, Review } from './types';
-import { API_BASE_URL, REVIEWS_API_URL } from './config/constants';
+import { Product, CartItem, Review, Promotion } from './types';
+import { API_BASE_URL, REVIEWS_API_URL, PROMOTIONS_API_URL } from './config/constants';
 import { BrandIntroModal } from './components/BrandIntroModal';
 import { HeaderNav } from './components/HeaderNav';
 import { BottomNav } from './components/BottomNav';
@@ -21,22 +21,33 @@ export default function App() {
   });
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isSubmitReviewModalOpen, setIsSubmitReviewModalOpen] = useState<boolean>(false);
+
   const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem('silvys_cart_v3');
-    return saved ? JSON.parse(saved) : [];
+    const saved = localStorage.getItem('silvys_cart_v4');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [];
+      }
+    }
+    return [];
   });
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchProductsFromBackend();
+    fetchPromotionsFromBackend();
     fetchReviewsFromBackend();
 
-    // Auto-poll backend every 3 seconds to reflect live admin updates immediately
+    // Auto-poll backend every 3 seconds to reflect live admin updates
     const interval = setInterval(() => {
       fetchProductsFromBackend();
+      fetchPromotionsFromBackend();
       fetchReviewsFromBackend();
     }, 3000);
 
@@ -44,7 +55,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('silvys_cart_v3', JSON.stringify(cart));
+    localStorage.setItem('silvys_cart_v4', JSON.stringify(cart));
   }, [cart]);
 
   const fetchProductsFromBackend = async () => {
@@ -59,7 +70,23 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.warn('Backend API connection offline, utilizing initial catalog:', err);
+      console.warn('Backend API connection offline:', err);
+    }
+  };
+
+  const fetchPromotionsFromBackend = async () => {
+    try {
+      const res = await fetch(PROMOTIONS_API_URL);
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data && data.success && Array.isArray(data.data) ? data.data : null);
+        if (list) {
+          setPromotions(list);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Backend Promotions API connection offline:', err);
     }
   };
 
@@ -75,7 +102,7 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.warn('Backend Reviews API connection offline, utilizing fallback reviews:', err);
+      console.warn('Backend Reviews API connection offline:', err);
     }
   };
 
@@ -84,23 +111,46 @@ export default function App() {
     setCurrentScreen('home');
   };
 
-  const handleAddToCart = (product: Product, quantity: number = 1) => {
+  // CART ADD METHOD: Identity MUST be product ID + selected unit
+  const handleAddToCart = (
+    product: Product,
+    selectedUnit?: string,
+    selectedPrice?: number,
+    quantity: number = 1
+  ) => {
+    const unitToUse = selectedUnit || product.unit || '500g';
+    const priceToUse = selectedPrice !== undefined ? selectedPrice : product.price;
+    const cartItemId = `${product.id}_${unitToUse}`;
+
     setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.id === product.id);
+      const existing = prevCart.find((item) => item.cartItemId === cartItemId);
       if (existing) {
         return prevCart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.cartItemId === cartItemId ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      return [...prevCart, { ...product, quantity }];
+      return [
+        ...prevCart,
+        {
+          cartItemId,
+          productId: product.id,
+          name: product.name,
+          malayalamName: product.malayalamName ?? product.malayalam_name ?? null,
+          category: product.category,
+          imageUrl: product.imageUrl ?? product.image_url ?? '',
+          selectedUnit: unitToUse,
+          selectedPrice: priceToUse,
+          quantity,
+        },
+      ];
     });
   };
 
-  const handleUpdateQuantity = (id: number, delta: number) => {
+  const handleUpdateQuantity = (cartItemId: string, delta: number) => {
     setCart((prevCart) =>
       prevCart
         .map((item) => {
-          if (item.id === id) {
+          if (item.cartItemId === cartItemId) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -110,8 +160,8 @@ export default function App() {
     );
   };
 
-  const handleRemoveItem = (id: number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  const handleRemoveItem = (cartItemId: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.cartItemId !== cartItemId));
   };
 
   const handleOpenProductDetails = (product: Product) => {
@@ -126,14 +176,14 @@ export default function App() {
     return <BrandIntroModal onEnter={handleEnterKitchen} />;
   }
 
-  // SCREEN 4: Product Details Screen (Screen 4 in Reference)
+  // SCREEN 4: Product Details Screen
   if (currentScreen === 'product-detail' && selectedProduct) {
     return (
       <ProductDetailScreen
         product={selectedProduct}
         onBack={() => setCurrentScreen('home')}
-        onAddToCart={(p, qty) => {
-          handleAddToCart(p, qty);
+        onAddToCart={(p, unit, price, qty) => {
+          handleAddToCart(p, unit, price, qty);
           setCurrentScreen('cart');
         }}
         cartCount={totalCartBadgeCount}
@@ -142,7 +192,7 @@ export default function App() {
     );
   }
 
-  // SCREEN 5: Cart Screen (Screen 5 in Reference)
+  // SCREEN 5: Cart Screen
   if (currentScreen === 'cart') {
     return (
       <div className="min-h-screen bg-parchment">
@@ -178,11 +228,12 @@ export default function App() {
         onGoHome={() => setCurrentScreen('home')}
       />
 
-      {/* SCREEN 2: Home Page (Screen 2 in Reference) */}
+      {/* SCREEN 2: Home Page */}
       {currentScreen === 'home' && (
         <main className="flex-grow space-y-4">
-          {/* Hero Banner Jar Photography */}
+          {/* Hero Banner Section (Promotions Aware with Fallback) */}
           <HeroSection
+            promotions={promotions}
             products={products}
             onExploreNow={() => setCurrentScreen('pickles')}
             onSelectProduct={handleOpenProductDetails}
@@ -194,7 +245,7 @@ export default function App() {
             onSelectSnacks={() => setCurrentScreen('snacks')}
           />
 
-          {/* Customer Reviews Paper Note Carousel */}
+          {/* "Try Our New Flavours" Featured Reviews Carousel */}
           <ReviewCarousel
             reviews={reviews}
             onOpenSubmitModal={() => setIsSubmitReviewModalOpen(true)}
@@ -202,7 +253,7 @@ export default function App() {
         </main>
       )}
 
-      {/* SCREEN 3: Pickles Category (Screen 3 in Reference) */}
+      {/* SCREEN 3: Pickles Category */}
       {currentScreen === 'pickles' && (
         <main className="flex-grow px-4 py-3 space-y-4">
           <div className="flex items-center gap-3">
@@ -227,7 +278,7 @@ export default function App() {
               <ProductCard
                 key={product.id}
                 product={product}
-                onAddToCart={(_, p) => handleAddToCart(p, 1)}
+                onAddToCart={(_, p) => handleAddToCart(p, undefined, undefined, 1)}
                 onOpenDetails={handleOpenProductDetails}
               />
             ))}
@@ -260,7 +311,7 @@ export default function App() {
               <ProductCard
                 key={product.id}
                 product={product}
-                onAddToCart={(_, p) => handleAddToCart(p, 1)}
+                onAddToCart={(_, p) => handleAddToCart(p, undefined, undefined, 1)}
                 onOpenDetails={handleOpenProductDetails}
               />
             ))}

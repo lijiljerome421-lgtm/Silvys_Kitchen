@@ -1,5 +1,5 @@
 -- Cloudflare D1 (SQLite) Database Schema for Silvy's Kitchen
--- Derived from Spring Boot backend entities: Product, AdminUser, Review, SessionService
+-- Derived from Spring Boot backend entities: Product, AdminUser, Review, SessionService, Promotions
 
 PRAGMA foreign_keys = ON;
 
@@ -13,11 +13,15 @@ CREATE TABLE IF NOT EXISTS products (
     unit TEXT,
     category TEXT NOT NULL,
     image_url TEXT,
+    image_url_2 TEXT,
+    image_url_3 TEXT,
     image_key TEXT,
     image_content_type TEXT DEFAULT 'image/jpeg',
     available INTEGER NOT NULL DEFAULT 1,
     featured INTEGER NOT NULL DEFAULT 0,
-    preparation_time TEXT
+    preparation_time TEXT,
+    weight_options TEXT,
+    nutrition_info TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
@@ -42,13 +46,17 @@ CREATE TABLE IF NOT EXISTS reviews (
     rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
     review_text TEXT NOT NULL,
     product_name TEXT,
+    product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
     approved INTEGER NOT NULL DEFAULT 0,
+    is_featured INTEGER DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(approved);
 CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reviews_approved_created_at ON reviews(approved, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_is_featured ON reviews(is_featured);
 
 -- 4. Sessions Table (for Edge Worker admin session persistence)
 CREATE TABLE IF NOT EXISTS sessions (
@@ -60,3 +68,18 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_username ON sessions(username);
+
+-- 5. Promotions Table
+CREATE TABLE IF NOT EXISTS promotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    image_url TEXT NOT NULL,
+    link_type TEXT DEFAULT 'NONE',
+    link_value TEXT,
+    active INTEGER NOT NULL DEFAULT 1,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+);
+
+CREATE INDEX IF NOT EXISTS idx_promotions_active_order ON promotions(active, display_order ASC, id ASC);

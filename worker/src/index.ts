@@ -5,6 +5,7 @@ import { validateImageFile, uploadToCloudinary } from './services/cloudinary';
 import { productRoutes } from './routes/products';
 import { authRoutes } from './routes/auth';
 import { publicReviewRoutes, adminReviewRoutes } from './routes/reviews';
+import { publicPromotionRoutes, adminPromotionRoutes } from './routes/promotions';
 import { adminAuthMiddleware, type AuthVariables } from './middleware/auth';
 
 const app = new Hono<{ Bindings: Bindings; Variables: AuthVariables }>();
@@ -60,6 +61,8 @@ app.route('/api/products', productRoutes);
 app.route('/api/admin', authRoutes);
 app.route('/api/reviews', publicReviewRoutes);
 app.route('/api/admin/reviews', adminReviewRoutes);
+app.route('/api/promotions', publicPromotionRoutes);
+app.route('/api/admin/promotions', adminPromotionRoutes);
 
 const handleImageUpload = async (c: any) => {
   try {
@@ -117,4 +120,3 @@ app.post('/api/admin/upload-image', adminAuthMiddleware, handleImageUpload);
 app.post('/api/test/cloudinary-upload', adminAuthMiddleware, handleImageUpload);
 
 export default app;
-
