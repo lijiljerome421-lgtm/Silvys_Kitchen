@@ -115,6 +115,7 @@ publicReviewRoutes.post('/', async (c) => {
 publicReviewRoutes.get('/', async (c) => {
   try {
     const productIdParam = c.req.query('product_id') ?? c.req.query('productId');
+    const featuredParam = c.req.query('featured') ?? c.req.query('is_featured') ?? c.req.query('isFeatured');
     let query = 'SELECT * FROM reviews WHERE approved = 1';
     const params: any[] = [];
 
@@ -125,6 +126,10 @@ publicReviewRoutes.get('/', async (c) => {
       }
       query += ' AND product_id = ?';
       params.push(pId);
+    }
+
+    if (featuredParam === 'true' || featuredParam === '1') {
+      query += ' AND is_featured = 1';
     }
 
     query += ' ORDER BY created_at DESC, id DESC';

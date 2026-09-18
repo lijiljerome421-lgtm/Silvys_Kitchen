@@ -1,25 +1,24 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
 import { REVIEWS_API_URL } from '../config/constants';
-import { Star, X, CheckCircle2, Heart } from 'lucide-react';
+import { Star, X, CheckCircle2, Heart, Tag } from 'lucide-react';
 
 interface SubmitReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  products: Product[];
+  targetProduct?: Product | null;
   onReviewSubmitted: () => void;
 }
 
 export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
   isOpen,
   onClose,
-  products,
+  targetProduct,
   onReviewSubmitted,
 }) => {
   const [customerName, setCustomerName] = useState<string>('');
   const [rating, setRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number>(0);
-  const [productName, setProductName] = useState<string>('');
   const [reviewText, setReviewText] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedSuccess, setSubmittedSuccess] = useState<boolean>(false);
@@ -30,15 +29,15 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName.trim() || !reviewText.trim()) {
-      setErrorMessage('Please fill in your name and review note.');
+      setErrorMessage('Please fill in your name and review text.');
       return;
     }
 
     setIsSubmitting(true);
     setErrorMessage('');
 
-    const matchedProduct = products.find(p => p.name === productName);
-    const productIdToPass = matchedProduct ? matchedProduct.id : undefined;
+    const productIdToPass = targetProduct ? targetProduct.id : undefined;
+    const productNameToPass = targetProduct ? targetProduct.name : undefined;
 
     try {
       const res = await fetch(REVIEWS_API_URL, {
@@ -50,8 +49,8 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
           rating,
           review_text: reviewText.trim(),
           reviewText: reviewText.trim(),
-          product_name: productName || undefined,
-          productName: productName || undefined,
+          product_name: productNameToPass,
+          productName: productNameToPass,
           product_id: productIdToPass,
           productId: productIdToPass,
         }),
@@ -66,12 +65,12 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
           // Reset form
           setCustomerName('');
           setRating(5);
-          setProductName('');
           setReviewText('');
-        }, 2200);
+        }, 2500);
         return;
       } else {
-        setErrorMessage('Could not submit note. Please try again.');
+        const errData = await res.json().catch(() => ({}));
+        setErrorMessage(errData.error || 'Could not submit review. Please try again.');
       }
     } catch (err) {
       console.warn('Network error submitting review:', err);
@@ -80,7 +79,7 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
         setSubmittedSuccess(false);
         onReviewSubmitted();
         onClose();
-      }, 2000);
+      }, 2500);
     } finally {
       setIsSubmitting(false);
     }
@@ -93,12 +92,13 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
           <div className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-red-700 fill-red-700/20" />
             <h3 className="font-heading text-xl font-bold text-espresso">
-              Share Your Experience
+              Write a Review
             </h3>
           </div>
           <button
             onClick={onClose}
             className="p-1 rounded-full text-espresso-muted hover:text-espresso hover:bg-parchment transition-colors"
+            aria-label="Close review modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -112,8 +112,8 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
             <h4 className="font-heading text-2xl font-bold text-espresso">
               Nanni! (Thank You!)
             </h4>
-            <p className="text-xs text-espresso-muted max-w-xs mx-auto">
-              Your note has been received with love. It will appear on our kitchen wall once reviewed by Silvy.
+            <p className="text-xs text-espresso-muted max-w-xs mx-auto leading-relaxed">
+              Your review for <strong className="text-espresso font-semibold">{targetProduct?.name || 'our kitchen'}</strong> has been submitted. It will appear on this product page after approval.
             </p>
           </div>
         ) : (
@@ -121,6 +121,21 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
             {errorMessage && (
               <div className="bg-red-50 border border-red-200 text-red-700 p-2.5 rounded-xl text-xs">
                 {errorMessage}
+              </div>
+            )}
+
+            {/* Locked Product Banner */}
+            {targetProduct && (
+              <div className="bg-olive-tint/70 border border-olive-leaf/30 rounded-2xl p-3 flex items-center gap-2.5">
+                <Tag className="w-4 h-4 text-olive-deep shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10px] uppercase font-bold text-olive-leaf tracking-wider block">
+                    Reviewing Product
+                  </span>
+                  <span className="font-heading font-bold text-xs text-espresso truncate block">
+                    {targetProduct.name}
+                  </span>
+                </div>
               </div>
             )}
 
@@ -140,7 +155,7 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
 
             <div>
               <label className="block font-semibold text-espresso mb-1">
-                Rating *
+                Star Rating *
               </label>
               <div className="flex items-center gap-2 pt-1">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -151,6 +166,7 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
                     className="p-1 transition-transform active:scale-125 focus:outline-none"
+                    aria-label={`Rate ${star} star`}
                   >
                     <Star
                       className={`w-7 h-7 ${
@@ -162,37 +178,19 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
                   </button>
                 ))}
                 <span className="text-xs font-bold text-espresso-muted ml-2">
-                  {rating} of 5 Stars
+                  {rating} / 5 Stars
                 </span>
               </div>
             </div>
 
             <div>
               <label className="block font-semibold text-espresso mb-1">
-                What did you try? (Optional)
-              </label>
-              <select
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                className="w-full p-3 rounded-xl border border-border-warm bg-white text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-olive-leaf"
-              >
-                <option value="">General Kitchen Note</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-espresso mb-1">
-                Your Note *
+                Your Review *
               </label>
               <textarea
-                rows={3}
+                rows={4}
                 required
-                placeholder="Write a short message about the taste, packaging, or experience..."
+                placeholder="Share your thoughts about taste, aroma, texture, or quality..."
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 className="w-full p-3 rounded-xl border border-border-warm bg-white text-sm focus:outline-none focus:ring-1 focus:ring-olive-leaf"
@@ -212,7 +210,7 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
                 disabled={isSubmitting}
                 className="px-6 py-2.5 bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white rounded-xl font-bold text-xs shadow-warm-sm flex items-center gap-2"
               >
-                <span>{isSubmitting ? 'Sending...' : 'Send Note ♡'}</span>
+                <span>{isSubmitting ? 'Submitting...' : 'Submit Review'}</span>
               </button>
             </div>
           </form>
@@ -221,3 +219,4 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
     </div>
   );
 };
+

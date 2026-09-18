@@ -1228,7 +1228,7 @@ export default function App() {
 
                         {isFeatured && (
                           <span className="text-[9px] font-extrabold text-amber-900 bg-rattan-gold/20 border border-rattan-gold/40 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Star className="w-3 h-3 text-rattan-gold fill-rattan-gold" /> Featured
+                            <Star className="w-3 h-3 text-rattan-gold fill-rattan-gold" /> Shown on Home
                           </span>
                         )}
                       </div>
@@ -1241,7 +1241,7 @@ export default function App() {
 
                     {/* Action Buttons */}
                     <div className="pt-2 border-t border-border-warm/40 flex items-center justify-between gap-2">
-                      {/* Feature / Unfeature Toggle Button */}
+                      {/* Show on Home Toggle Button */}
                       {r.approved ? (
                         <button
                           onClick={() => handleToggleFeatureReview(r.id)}
@@ -1250,14 +1250,14 @@ export default function App() {
                               ? 'bg-rattan-gold/30 text-amber-950 border border-rattan-gold hover:bg-rattan-gold/40'
                               : 'bg-white text-espresso border border-border-warm/60 hover:bg-parchment'
                           }`}
-                          title="Toggle homepage featured status"
+                          title="Toggle homepage visibility. Turning OFF keeps review on product page."
                         >
                           <Star className={`w-3.5 h-3.5 ${isFeatured ? 'text-rattan-gold fill-rattan-gold' : 'text-gray-400'}`} />
-                          <span>{isFeatured ? '★ Featured' : '☆ Feature'}</span>
+                          <span>{isFeatured ? 'Show on Home: ON' : 'Show on Home: OFF'}</span>
                         </button>
                       ) : (
                         <span className="text-[10px] text-espresso-muted italic">
-                          (Approve review to feature)
+                          (Approve review to show on home)
                         </span>
                       )}
 

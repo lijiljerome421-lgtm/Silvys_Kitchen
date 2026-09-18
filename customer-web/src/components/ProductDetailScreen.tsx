@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Product, WeightOption, NutritionInfo, Review } from '../types';
 import { WHATSAPP_PHONE, REVIEWS_API_URL, getImageUrl } from '../config/constants';
 import { WhatsAppIcon } from './WhatsAppIcon';
-import { ArrowLeft, ShoppingCart, Minus, Plus, Info, Star } from 'lucide-react';
+import { SubmitReviewModal } from './SubmitReviewModal';
+import { StarRatingDisplay } from './StarRatingDisplay';
+import { ArrowLeft, ShoppingCart, Minus, Plus, Info, Star, Share2, ArrowUp, MessageSquare, Check } from 'lucide-react';
 
 interface ProductDetailScreenProps {
   product: Product;
@@ -19,6 +21,34 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
   cartCount,
   onOpenCart,
 }) => {
+  const topRef = useRef<HTMLDivElement>(null);
+  const reviewsRef = useRef<HTMLDivElement>(null);
+
+  // Sticky navigation visibility on scroll
+  const [showStickyNav, setShowStickyNav] = useState<boolean>(false);
+  const [showCopiedToast, setShowCopiedToast] = useState<boolean>(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      setShowStickyNav(scrollY > 220);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToReviews = () => {
+    if (reviewsRef.current) {
+      reviewsRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   // Multi-image list
   const mainImage = product.imageUrl ?? product.image_url;
   const imagesList = product.images && product.images.length > 0
@@ -72,6 +102,36 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
     }
   };
 
+  // Calculate overall rating if approved reviews exist
+  const averageRating = productReviews.length > 0
+    ? (productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length)
+    : null;
+
+  // Share functionality
+  const handleShareProduct = async () => {
+    const productUrl = `${window.location.origin}${window.location.pathname}?product=${product.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Silvy's Kitchen - ${product.name}`,
+          text: `Check out ${product.name} from Silvy's Kitchen!`,
+          url: productUrl,
+        });
+        return;
+      } catch (err) {
+        // Fallback to clipboard if share was canceled or failed
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(productUrl);
+      setShowCopiedToast(true);
+      setTimeout(() => setShowCopiedToast(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
+
   const handleOrderWhatsApp = () => {
     const msg = `Hello Silvy's Kitchen! 👋\n\nI would like to order:\n• *${product.name}* (${activeUnit}) × ${quantity}\nTotal Price: ₹${activePrice * quantity}\n\nPlease confirm availability & delivery details. Thank you!`;
     const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
@@ -98,7 +158,30 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
     : 'Rice flour, fresh coconut milk, sesame seeds, cumin, coconut oil, cardamom, salt.';
 
   return (
-    <div className="min-h-screen bg-parchment text-espresso flex flex-col max-w-md mx-auto relative pb-20 shadow-2xl font-body">
+    <div ref={topRef} className="min-h-screen bg-parchment text-espresso flex flex-col max-w-md mx-auto relative pb-20 shadow-2xl border-x border-border-warm/40 font-body">
+      {/* STICKY PRODUCT PAGE NAVIGATION BAR (Contains ONLY: [ Reviews ] [ ↑ Back to Top ]) */}
+      {showStickyNav && (
+        <div className="fixed top-0 left-0 right-0 z-40 max-w-md mx-auto px-4 pt-2 transition-all duration-300 pointer-events-none">
+          <nav className="pointer-events-auto bg-parchment-surface/95 backdrop-blur-md border border-border-warm/80 rounded-2xl shadow-warm-lg px-4 py-2 flex items-center justify-between">
+            <button
+              onClick={scrollToReviews}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-olive-tint text-olive-deep font-bold text-xs hover:bg-olive-deep hover:text-white transition-colors"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Reviews</span>
+            </button>
+
+            <button
+              onClick={scrollToTop}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-parchment text-espresso font-bold text-xs border border-border-warm/70 hover:bg-parchment-deep transition-colors"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+              <span>Back to Top</span>
+            </button>
+          </nav>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-30 bg-parchment/90 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-border-warm/40">
         <button
@@ -109,19 +192,40 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
           <ArrowLeft className="w-6 h-6" />
         </button>
 
-        <button
-          onClick={onOpenCart}
-          className="relative p-1.5 text-espresso hover:text-olive-leaf transition-colors"
-          aria-label="Open Cart"
-        >
-          <ShoppingCart className="w-6 h-6" />
-          {cartCount > 0 && (
-            <span className="absolute top-0 right-0 bg-emerald-900 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
-              {cartCount}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Product Share Button */}
+          <button
+            onClick={handleShareProduct}
+            className="p-1.5 rounded-full hover:bg-parchment-deep text-espresso transition-colors relative"
+            title="Share product link"
+            aria-label="Share product"
+          >
+            <Share2 className="w-5 h-5 text-espresso" />
+          </button>
+
+          {/* Cart Icon */}
+          <button
+            onClick={onOpenCart}
+            className="relative p-1.5 text-espresso hover:text-olive-leaf transition-colors"
+            aria-label="Open Cart"
+          >
+            <ShoppingCart className="w-6 h-6" />
+            {cartCount > 0 && (
+              <span className="absolute top-0 right-0 bg-emerald-900 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                {cartCount}
+              </span>
+            )}
+          </button>
+        </div>
       </header>
+
+      {/* Copied Toast Alert */}
+      {showCopiedToast && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-espresso text-white text-xs font-bold px-4 py-2 rounded-xl shadow-warm-md flex items-center gap-1.5 border border-white/20 animate-fade-in">
+          <Check className="w-4 h-4 text-emerald-400" />
+          <span>Link copied</span>
+        </div>
+      )}
 
       {/* MULTI-IMAGE GALLERY (1 to 3 Images) */}
       <div className="w-full aspect-[4/3] bg-parchment-deep relative overflow-hidden border-b border-border-warm">
@@ -480,24 +584,41 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </div>
 
         {/* PRODUCT-SPECIFIC REVIEWS SECTION */}
-        {productReviews.length > 0 && (
-          <div className="pt-4 border-t border-border-warm/60 space-y-3">
-            <h4 className="text-xs font-bold text-espresso uppercase tracking-wider">
-              Customer Reviews for {product.name} ({productReviews.length})
-            </h4>
-            <div className="space-y-2.5">
+        <div ref={reviewsRef} className="pt-6 border-t border-border-warm/60 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 className="font-heading text-lg font-bold text-espresso mb-1">
+                Customer Reviews
+              </h3>
+              {averageRating !== null ? (
+                <StarRatingDisplay rating={averageRating} size="md" showNumeric={true} />
+              ) : (
+                <span className="text-xs text-espresso-muted italic block mt-0.5 font-serif">
+                  No reviews yet for this product. Be the first!
+                </span>
+              )}
+            </div>
+
+            {/* WRITE A REVIEW BUTTON (Product pre-attached) */}
+            <button
+              onClick={() => setIsReviewModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white font-bold text-xs shadow-warm-sm flex items-center gap-1.5 transition-all"
+            >
+              <Star className="w-3.5 h-3.5 text-rattan-gold fill-rattan-gold" />
+              <span>Write a Review</span>
+            </button>
+          </div>
+
+          {/* List of Approved Product Reviews */}
+          {productReviews.length > 0 && (
+            <div className="space-y-3 pt-1">
               {productReviews.map((rev) => (
-                <div key={rev.id} className="bg-parchment-card p-3 rounded-2xl border border-border-warm/60 space-y-1">
+                <div key={rev.id} className="bg-parchment-card p-4 rounded-2xl border border-border-warm/70 space-y-2 shadow-warm-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-heading text-xs font-bold text-espresso">{rev.customerName || rev.customer_name}</span>
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3 h-3 ${i < rev.rating ? 'text-rattan-gold fill-rattan-gold' : 'text-gray-300'}`}
-                        />
-                      ))}
-                    </div>
+                    <span className="font-heading text-xs font-bold text-espresso">
+                      {rev.customerName || rev.customer_name}
+                    </span>
+                    <StarRatingDisplay rating={rev.rating} size="sm" showNumeric={false} />
                   </div>
                   <p className="text-xs text-espresso italic font-serif leading-relaxed">
                     "{rev.reviewText || rev.review_text}"
@@ -505,10 +626,17 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Product Specific Review Submission Modal */}
+      <SubmitReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        targetProduct={product}
+        onReviewSubmitted={fetchProductSpecificReviews}
+      />
     </div>
   );
 };
-

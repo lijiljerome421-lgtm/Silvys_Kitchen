@@ -19,3 +19,6 @@ export const getImageUrl = (url: string | undefined | null): string => {
 
 export const OFFICIAL_TAGLINE = 'Handmade with love, rooted in tradition';
 export const MALAYALAM_TAGLINE = 'കൈപ്പുണ്യത്തിന്റെ അവസാന വാക്ക്';
+export const CONTACT_EMAIL = 'silvyskitchen2000@gmail.com';
+export const HERITAGE_YEAR = 'Since 2000';
+

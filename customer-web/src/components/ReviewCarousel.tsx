@@ -1,60 +1,39 @@
 import React from 'react';
 import { Review } from '../types';
-import { Star, Sparkles, MessageSquarePlus } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { StarRatingDisplay } from './StarRatingDisplay';
 
 interface ReviewCarouselProps {
   reviews: Review[];
-  onOpenSubmitModal: () => void;
 }
 
 export const ReviewCarousel: React.FC<ReviewCarouselProps> = ({
   reviews,
-  onOpenSubmitModal,
 }) => {
-  // CORRECTION 2: Filter ONLY approved AND featured reviews
+  // Filter ONLY approved AND featured reviews
   const featuredReviews = reviews.filter(
     (r) => r.approved !== false && (r.isFeatured === true || r.is_featured === true)
   );
 
   // If zero featured reviews exist, hide the section gracefully
   if (featuredReviews.length === 0) {
-    return (
-      <section className="px-5 py-3 text-center font-body">
-        <button
-          onClick={onOpenSubmitModal}
-          className="text-xs font-semibold text-olive-deep bg-white border border-olive-leaf/30 hover:bg-olive-tint px-4 py-2 rounded-xl transition-all shadow-xs inline-flex items-center gap-1.5"
-        >
-          <MessageSquarePlus className="w-3.5 h-3.5" />
-          <span>Tried Silvy's Kitchen? Leave us a note ♡</span>
-        </button>
-      </section>
-    );
+    return null;
   }
 
   return (
     <section className="py-5 bg-parchment-deep/40 border-y border-border-warm/60 my-4 font-body">
-      {/* Header Section: "Try Our New Flavours" */}
-      <div className="px-5 mb-4 flex items-end justify-between">
-        <div>
-          <div className="flex items-center gap-1.5 text-xs text-olive-leaf font-bold uppercase tracking-wider mb-1">
-            <Sparkles className="w-3.5 h-3.5 text-rattan-gold fill-rattan-gold" />
-            <span>Featured Customer Reviews</span>
-          </div>
-          <h3 className="font-heading text-2xl font-bold text-espresso leading-snug">
-            Try Our New Flavours
-          </h3>
-          <p className="text-xs text-espresso-muted mt-0.5 font-serif italic">
-            "Handcrafted recipes loved by our community."
-          </p>
+      {/* Header Section */}
+      <div className="px-5 mb-4">
+        <div className="flex items-center gap-1.5 text-xs text-olive-leaf font-bold uppercase tracking-wider mb-1">
+          <Sparkles className="w-3.5 h-3.5 text-rattan-gold fill-rattan-gold" />
+          <span>Customer Feedback</span>
         </div>
-
-        <button
-          onClick={onOpenSubmitModal}
-          className="shrink-0 text-xs font-bold text-olive-deep bg-white border border-olive-leaf/30 hover:bg-olive-tint px-3 py-1.5 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
-        >
-          <MessageSquarePlus className="w-3.5 h-3.5" />
-          <span>Note Us</span>
-        </button>
+        <h3 className="font-heading text-2xl font-bold text-espresso leading-snug">
+          What Our Customers Say
+        </h3>
+        <p className="text-xs text-espresso-muted mt-0.5 font-serif italic">
+          "Handcrafted recipes loved by our community."
+        </p>
       </div>
 
       {/* Horizontal Swipe Carousel for Featured Reviews */}
@@ -72,18 +51,7 @@ export const ReviewCarousel: React.FC<ReviewCarouselProps> = ({
               {/* Paper Note Card Top Bar */}
               <div className="flex justify-between items-center mb-2">
                 {/* 5-Star Rating */}
-                <div className="flex items-center gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-3.5 h-3.5 ${
-                        i < rev.rating
-                          ? 'text-rattan-gold fill-rattan-gold'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
+                <StarRatingDisplay rating={rev.rating} size="sm" showNumeric={false} />
                 <span className="text-red-700/60 text-xs select-none">♡</span>
               </div>
 
@@ -110,3 +78,4 @@ export const ReviewCarousel: React.FC<ReviewCarouselProps> = ({
     </section>
   );
 };
+

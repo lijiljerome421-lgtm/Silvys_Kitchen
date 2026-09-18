@@ -10,20 +10,23 @@ import { ProductCard } from './components/ProductCard';
 import { ProductDetailScreen } from './components/ProductDetailScreen';
 import { CartDrawer } from './components/CartDrawer';
 import { ReviewCarousel } from './components/ReviewCarousel';
-import { SubmitReviewModal } from './components/SubmitReviewModal';
+import { ContactSection } from './components/ContactSection';
 import { ArrowLeft } from 'lucide-react';
 
 type ScreenState = 'intro' | 'home' | 'pickles' | 'snacks' | 'product-detail' | 'cart';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<ScreenState>(() => {
+    // Check if deep link ?product=123 exists to skip intro directly to product
+    const params = new URLSearchParams(window.location.search);
+    const hasProductParam = params.has('product') || params.has('productId') || params.has('product_id');
+    if (hasProductParam) return 'home';
     return sessionStorage.getItem('silvys_intro_seen') ? 'home' : 'intro';
   });
 
   const [products, setProducts] = useState<Product[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [isSubmitReviewModalOpen, setIsSubmitReviewModalOpen] = useState<boolean>(false);
 
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('silvys_cart_v4');
@@ -53,6 +56,22 @@ export default function App() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Deep-linking: auto-open product detail screen when URL contains ?product=123
+  useEffect(() => {
+    if (products.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const prodParam = params.get('product') || params.get('productId') || params.get('product_id');
+      if (prodParam) {
+        const targetId = Number(prodParam);
+        const found = products.find((p) => p.id === targetId);
+        if (found) {
+          setSelectedProduct(found);
+          setCurrentScreen('product-detail');
+        }
+      }
+    }
+  }, [products]);
 
   useEffect(() => {
     localStorage.setItem('silvys_cart_v4', JSON.stringify(cart));
@@ -167,6 +186,13 @@ export default function App() {
   const handleOpenProductDetails = (product: Product) => {
     setSelectedProduct(product);
     setCurrentScreen('product-detail');
+    const newUrl = `${window.location.pathname}?product=${product.id}`;
+    window.history.pushState(null, '', newUrl);
+  };
+
+  const handleBackFromProductDetail = () => {
+    setCurrentScreen('home');
+    window.history.pushState(null, '', window.location.pathname);
   };
 
   const totalCartBadgeCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -181,7 +207,7 @@ export default function App() {
     return (
       <ProductDetailScreen
         product={selectedProduct}
-        onBack={() => setCurrentScreen('home')}
+        onBack={handleBackFromProductDetail}
         onAddToCart={(p, unit, price, qty) => {
           handleAddToCart(p, unit, price, qty);
           setCurrentScreen('cart');
@@ -245,11 +271,13 @@ export default function App() {
             onSelectSnacks={() => setCurrentScreen('snacks')}
           />
 
-          {/* "Try Our New Flavours" Featured Reviews Carousel */}
+          {/* Featured Customer Reviews Carousel (Display Only) */}
           <ReviewCarousel
             reviews={reviews}
-            onOpenSubmitModal={() => setIsSubmitReviewModalOpen(true)}
           />
+
+          {/* Homepage Contact Us Section */}
+          <ContactSection />
         </main>
       )}
 
@@ -325,14 +353,7 @@ export default function App() {
         onNavigate={(screen) => setCurrentScreen(screen)}
         cartCount={totalCartBadgeCount}
       />
-
-      {/* Customer Review Submission Modal */}
-      <SubmitReviewModal
-        isOpen={isSubmitReviewModalOpen}
-        onClose={() => setIsSubmitReviewModalOpen(false)}
-        products={products}
-        onReviewSubmitted={fetchReviewsFromBackend}
-      />
     </div>
   );
 }
+

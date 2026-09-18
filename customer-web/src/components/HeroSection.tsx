@@ -97,14 +97,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     const bannerImg = activePromo.imageUrl || activePromo.image_url;
 
     return (
-      <section className="px-5 pt-3 pb-2 max-w-md mx-auto font-body">
-        <div className="bg-espresso text-parchment rounded-3xl overflow-hidden shadow-warm-lg border border-border-warm/40 relative">
+      <section className="px-4 pt-1 pb-1 max-w-md mx-auto font-body">
+        <div className="bg-espresso text-parchment rounded-2xl overflow-hidden shadow-warm-md border border-border-warm/40 relative">
           {/* Top Header Bar */}
-          <div className="bg-parchment-deep/90 text-espresso px-5 py-3 border-b border-border-warm/60 flex items-center justify-between">
-            <span className="text-xs uppercase tracking-widest text-olive-leaf font-bold bg-olive-tint px-3 py-1 rounded-full border border-olive-leaf/20">
+          <div className="bg-parchment-deep/90 text-espresso px-4 py-2 border-b border-border-warm/60 flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-widest text-olive-leaf font-bold bg-olive-tint px-2.5 py-0.5 rounded-full border border-olive-leaf/20">
               ✨ Special Announcement
             </span>
-            <span className="font-script text-sm font-semibold text-rattan-amber italic">
+            <span className="font-script text-xs font-semibold text-rattan-amber italic">
               Silvy's Kitchen Offer
             </span>
           </div>
@@ -112,7 +112,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Promotion Banner Image */}
           <div
             onClick={() => handlePromotionClick(activePromo)}
-            className={`relative aspect-[16/9] w-full overflow-hidden bg-parchment-deep ${linkType !== 'NONE' ? 'cursor-pointer' : ''}`}
+            className={`relative aspect-[2.1/1] w-full overflow-hidden bg-parchment-deep ${linkType !== 'NONE' ? 'cursor-pointer' : ''}`}
           >
             <img
               src={getImageUrl(bannerImg)}
@@ -122,12 +122,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 (e.target as HTMLImageElement).src = 'assets/chicken_pickle.jpg';
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-espresso via-espresso/30 to-transparent flex items-end p-5">
+            <div className="absolute inset-0 bg-gradient-to-t from-espresso via-espresso/30 to-transparent flex items-end p-3.5">
               <div>
-                <span className="text-[10px] uppercase tracking-wider text-rattan-gold font-bold bg-espresso/80 px-2.5 py-0.5 rounded-md border border-rattan-gold/30">
+                <span className="text-[9px] uppercase tracking-wider text-rattan-gold font-bold bg-espresso/80 px-2 py-0.5 rounded-md border border-rattan-gold/30">
                   PROMOTION
                 </span>
-                <h2 className="font-heading text-2xl font-bold text-white mt-1 leading-tight">
+                <h2 className="font-heading text-lg font-bold text-white mt-0.5 leading-tight">
                   {activePromo.title}
                 </h2>
               </div>
@@ -135,37 +135,37 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           {/* Subtitle & CTA Row */}
-          <div className="p-5 space-y-4 bg-espresso">
+          <div className="p-3.5 space-y-2.5 bg-espresso">
             {activePromo.subtitle && (
-              <p className="text-xs text-parchment/90 leading-relaxed max-w-xs font-serif italic">
+              <p className="text-[11px] text-parchment/90 leading-relaxed max-w-xs font-serif italic">
                 "{activePromo.subtitle}"
               </p>
             )}
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center justify-between pt-0.5">
               {linkType === 'WHATSAPP' ? (
                 <button
                   onClick={() => handlePromotionClick(activePromo)}
-                  className="bg-[#25D366] hover:bg-[#1EBE57] active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-xs shadow-warm-md flex items-center gap-2 transition-all"
+                  className="bg-[#25D366] hover:bg-[#1EBE57] active:scale-95 text-white px-4 py-2 rounded-xl font-bold text-[11px] shadow-warm-sm flex items-center gap-1.5 transition-all"
                 >
-                  <WhatsAppIcon className="w-4 h-4 text-white" />
+                  <WhatsAppIcon className="w-3.5 h-3.5 text-white" />
                   <span>CLAIM ON WHATSAPP</span>
                 </button>
               ) : linkType === 'WEBSITE' ? (
                 <button
                   onClick={() => handlePromotionClick(activePromo)}
-                  className="bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-xs shadow-warm-md flex items-center gap-2 transition-all border border-white/10"
+                  className="bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white px-4 py-2 rounded-xl font-bold text-[11px] shadow-warm-sm flex items-center gap-1.5 transition-all border border-white/10"
                 >
                   <span>VIEW OFFER</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <button
                   onClick={onExploreNow}
-                  className="bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-xs shadow-warm-md flex items-center gap-2 transition-all border border-white/10"
+                  className="bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white px-4 py-2 rounded-xl font-bold text-[11px] shadow-warm-sm flex items-center gap-1.5 transition-all border border-white/10"
                 >
                   <span>EXPLORE MENU</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
 
@@ -176,10 +176,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <button
                       key={idx}
                       onClick={() => setActiveSlideIndex(idx)}
-                      className={`h-2 rounded-full transition-all duration-300 ${
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
                         activeSlideIndex === idx
-                          ? 'w-6 bg-olive-leaf'
-                          : 'w-2 bg-parchment/30 hover:bg-parchment/60'
+                          ? 'w-5 bg-olive-leaf'
+                          : 'w-1.5 bg-parchment/30 hover:bg-parchment/60'
                       }`}
                       aria-label={`Go to promotion slide ${idx + 1}`}
                     />
@@ -197,20 +197,20 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const activeProduct = heroProducts[activeSlideIndex] || heroProducts[0];
 
   return (
-    <section className="px-5 pt-3 pb-2 max-w-md mx-auto font-body">
-      <div className="bg-espresso text-parchment rounded-3xl overflow-hidden shadow-warm-lg border border-border-warm/40 relative">
-        <div className="bg-parchment-deep/90 text-espresso px-5 py-3 border-b border-border-warm/60 flex items-center justify-between">
-          <span className="text-xs uppercase tracking-widest text-olive-leaf font-bold bg-olive-tint px-3 py-1 rounded-full border border-olive-leaf/20">
+    <section className="px-4 pt-1 pb-1 max-w-md mx-auto font-body">
+      <div className="bg-espresso text-parchment rounded-2xl overflow-hidden shadow-warm-md border border-border-warm/40 relative">
+        <div className="bg-parchment-deep/90 text-espresso px-4 py-2 border-b border-border-warm/60 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-widest text-olive-leaf font-bold bg-olive-tint px-2.5 py-0.5 rounded-full border border-olive-leaf/20">
             🌿 Silvy's Kitchen
           </span>
-          <span className="font-script text-sm font-semibold text-rattan-amber italic">
+          <span className="font-script text-xs font-semibold text-rattan-amber italic">
             Homemade Specialties
           </span>
         </div>
 
         <div
           onClick={() => onSelectProduct?.(activeProduct)}
-          className="relative aspect-[16/10] w-full overflow-hidden bg-parchment-deep cursor-pointer"
+          className="relative aspect-[2.1/1] w-full overflow-hidden bg-parchment-deep cursor-pointer"
         >
           <img
             src={getImageUrl(activeProduct.imageUrl ?? activeProduct.image_url)}
@@ -220,30 +220,30 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               (e.target as HTMLImageElement).src = 'assets/chicken_pickle.jpg';
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-espresso via-espresso/30 to-transparent flex items-end p-5">
+          <div className="absolute inset-0 bg-gradient-to-t from-espresso via-espresso/30 to-transparent flex items-end p-3.5">
             <div>
-              <span className="text-[10px] uppercase tracking-wider text-rattan-gold font-bold bg-espresso/80 px-2.5 py-0.5 rounded-md border border-rattan-gold/30">
+              <span className="text-[9px] uppercase tracking-wider text-rattan-gold font-bold bg-espresso/80 px-2 py-0.5 rounded-md border border-rattan-gold/30">
                 {activeProduct.category}
               </span>
-              <h2 className="font-heading text-2xl font-bold text-white mt-1 leading-tight hover:text-rattan-gold transition-colors">
+              <h2 className="font-heading text-lg font-bold text-white mt-0.5 leading-tight hover:text-rattan-gold transition-colors">
                 {activeProduct.name}
               </h2>
             </div>
           </div>
         </div>
 
-        <div className="p-5 space-y-4 bg-espresso">
-          <p className="text-xs text-parchment/90 leading-relaxed max-w-xs font-serif italic">
+        <div className="p-3.5 space-y-2.5 bg-espresso">
+          <p className="text-[11px] text-parchment/90 leading-relaxed max-w-xs font-serif italic">
             "Authentic Kerala flavours for your home and celebrations."
           </p>
 
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between pt-0.5">
             <button
               onClick={onExploreNow}
-              className="bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white px-6 py-3 rounded-2xl font-bold text-xs shadow-warm-md flex items-center gap-2 transition-all border border-white/10"
+              className="bg-olive-deep hover:bg-olive-leaf active:scale-95 text-white px-4 py-2 rounded-xl font-bold text-[11px] shadow-warm-sm flex items-center gap-1.5 transition-all border border-white/10"
             >
               <span>EXPLORE NOW</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
             {heroProducts.length > 1 && (
@@ -252,10 +252,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <button
                     key={idx}
                     onClick={() => setActiveSlideIndex(idx)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
                       activeSlideIndex === idx
-                        ? 'w-6 bg-olive-leaf'
-                        : 'w-2 bg-parchment/30 hover:bg-parchment/60'
+                        ? 'w-5 bg-olive-leaf'
+                        : 'w-1.5 bg-parchment/30 hover:bg-parchment/60'
                     }`}
                     aria-label={`Go to slide ${idx + 1}`}
                   />

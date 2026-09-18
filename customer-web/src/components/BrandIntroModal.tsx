@@ -1,5 +1,5 @@
 import React from 'react';
-import { OFFICIAL_TAGLINE, MALAYALAM_TAGLINE } from '../config/constants';
+import { OFFICIAL_TAGLINE, MALAYALAM_TAGLINE, HERITAGE_YEAR } from '../config/constants';
 import { ArrowRight } from 'lucide-react';
 
 interface BrandIntroModalProps {
@@ -19,12 +19,15 @@ export const BrandIntroModal: React.FC<BrandIntroModalProps> = ({ onEnter }) => 
       {/* Main Centered Content */}
       <div className="my-auto flex flex-col items-center text-center w-full max-w-xs py-6">
         {/* Exact Official Logo */}
-        <div className="relative mb-6 transition-transform duration-500 hover:scale-105">
+        <div className="relative mb-3 transition-transform duration-500 hover:scale-105 flex flex-col items-center">
           <img
             src="assets/logo.jpg"
             alt="Silvy's Kitchen Official Logo"
-            className="w-72 sm:w-80 h-auto object-contain rounded-2xl drop-shadow-md border border-border-warm/40 bg-white/40 p-2"
+            className="w-44 sm:w-48 h-auto object-contain rounded-xl drop-shadow-md border border-border-warm/40 bg-white/40 p-1"
           />
+          <span className="text-[10px] font-serif font-bold italic text-olive-deep tracking-widest mt-1 opacity-90">
+            {HERITAGE_YEAR}
+          </span>
         </div>
 
         {/* Brand Taglines */}
