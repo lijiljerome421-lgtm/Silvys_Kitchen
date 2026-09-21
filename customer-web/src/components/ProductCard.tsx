@@ -76,7 +76,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-warm/40">
           <span className="text-xs font-bold text-espresso bg-parchment-deep px-2 py-0.5 rounded-md border border-border-warm/40">
-            {unitDisplay} | <span className="text-olive-deep font-heading text-sm">₹{minPrice}</span>
+            {unitDisplay} | <span className="text-olive-deep font-price font-bold text-sm">₹{minPrice}</span>
           </span>
 
           <button

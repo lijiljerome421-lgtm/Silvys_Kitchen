@@ -100,7 +100,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   {item.selectedUnit}
                 </div>
 
-                <div className="text-xs font-semibold text-espresso mt-0.5">
+                <div className="text-xs font-semibold font-price text-espresso mt-0.5">
                   ₹{item.selectedPrice} × {item.quantity}
                 </div>
 
@@ -113,7 +113,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     >
                       <Minus className="w-3 h-3" />
                     </button>
-                    <span className="w-4 text-center font-bold text-xs">
+                    <span className="w-4 text-center font-bold font-price text-xs">
                       {item.quantity}
                     </span>
                     <button
@@ -124,7 +124,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     </button>
                   </div>
 
-                  <div className="font-heading text-sm font-bold text-olive-deep ml-auto">
+                  <div className="font-price text-sm font-bold text-olive-deep ml-auto">
                     ₹{item.selectedPrice * item.quantity}
                   </div>
                 </div>
@@ -141,7 +141,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <span className="font-heading text-lg font-bold text-espresso">
               Total
             </span>
-            <span className="font-heading text-2xl font-bold text-olive-deep">
+            <span className="font-price text-2xl font-bold text-olive-deep">
               ₹{cartTotal}
             </span>
           </div>

@@ -288,7 +288,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
             <h2 className="font-heading text-2xl font-bold text-espresso leading-snug">
               {product.name}
             </h2>
-            <span className="font-heading text-2xl font-bold text-emerald-900 shrink-0">
+            <span className="font-price text-2xl font-bold text-emerald-900 shrink-0">
               {isCustomMode ? 'Custom Quote' : `₹${activePrice}`}
             </span>
           </div>
@@ -338,7 +338,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
                     <span className="block text-xs font-bold font-sans tracking-wide">
                       {opt.unit}
                     </span>
-                    <span className="block text-sm font-bold font-heading mt-1 opacity-90">
+                    <span className="block text-sm font-bold font-price mt-1 opacity-90">
                       ₹{opt.price}
                     </span>
                   </button>
@@ -358,7 +358,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
                 <span className="block text-xs font-bold font-sans tracking-wide">
                   {product.unit || '500g'}
                 </span>
-                <span className="block text-sm font-bold font-heading mt-1 opacity-90">
+                <span className="block text-sm font-bold font-price mt-1 opacity-90">
                   ₹{product.price}
                 </span>
               </button>
@@ -459,7 +459,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
               >
                 <Minus className="w-4 h-4" />
               </button>
-              <span className="flex-1 text-center font-bold text-base font-heading text-espresso">
+              <span className="flex-1 text-center font-bold text-base font-price text-espresso">
                 {quantity}
               </span>
               <button
@@ -554,7 +554,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
                 }`}
               >
                 <ShoppingCart className="w-5 h-5" />
-                <span>Add to Cart ({activeUnit} — ₹{activePrice * quantity})</span>
+                <span>Add to Cart ({activeUnit} — <span className="font-price">₹{activePrice * quantity}</span>)</span>
               </button>
 
               {/* Secondary Order on WhatsApp Button */}
