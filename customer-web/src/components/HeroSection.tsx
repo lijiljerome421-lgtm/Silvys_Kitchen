@@ -112,7 +112,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Promotion Banner Image */}
           <div
             onClick={() => handlePromotionClick(activePromo)}
-            className={`relative aspect-[2.1/1] w-full overflow-hidden bg-parchment-deep ${linkType !== 'NONE' ? 'cursor-pointer' : ''}`}
+            className={`relative aspect-[1.4/1] w-full overflow-hidden bg-parchment-deep ${linkType !== 'NONE' ? 'cursor-pointer' : ''}`}
           >
             <img
               src={getImageUrl(bannerImg)}
@@ -210,7 +210,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         <div
           onClick={() => onSelectProduct?.(activeProduct)}
-          className="relative aspect-[2.1/1] w-full overflow-hidden bg-parchment-deep cursor-pointer"
+          className="relative aspect-[1.4/1] w-full overflow-hidden bg-parchment-deep cursor-pointer"
         >
           <img
             src={getImageUrl(activeProduct.imageUrl ?? activeProduct.image_url)}

@@ -1,19 +1,17 @@
 import React from 'react';
-import { ShoppingBag, Menu } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { HERITAGE_YEAR } from '../config/constants';
 
 interface HeaderNavProps {
   cartCount: number;
   onOpenCart: () => void;
   onGoHome: () => void;
-  onOpenMenu?: () => void;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
   cartCount,
   onOpenCart,
   onGoHome,
-  onOpenMenu,
 }) => {
   return (
     <header className="relative z-30 w-full max-w-md mx-auto font-body">
@@ -29,28 +27,24 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
         {/* Top Controls Row */}
         <div className="flex items-center justify-between">
-          {/* Top Left: Circular Organic Parchment Menu Icon */}
-          <button
-            onClick={onOpenMenu || onGoHome}
-            className="w-9 h-9 rounded-full bg-parchment border border-border-warm/80 shadow-warm-xs flex items-center justify-center text-espresso hover:bg-parchment-deep active:scale-95 transition-all focus:outline-none"
-            aria-label="Menu"
-          >
-            <Menu className="w-4 h-4 text-espresso" />
-          </button>
-
-          {/* Official Silvy's Kitchen Logo & Since 2000 */}
+          {/* Official Silvy's Kitchen Logo & Brand Name */}
           <button
             onClick={onGoHome}
-            className="flex flex-col items-center group focus:outline-none"
+            className="flex items-center gap-2.5 group focus:outline-none"
           >
             <img
               src="assets/logo.jpg"
               alt="Silvy's Kitchen"
               className="h-9 w-auto object-contain rounded-xl border border-border-warm/60 bg-white p-0.5 shadow-warm-xs group-hover:scale-105 transition-transform"
             />
-            <span className="text-[9px] font-serif font-bold italic text-olive-deep tracking-wider mt-0.5 opacity-90">
-              {HERITAGE_YEAR}
-            </span>
+            <div className="flex flex-col items-start text-left">
+              <span className="font-heading text-sm font-bold text-espresso leading-tight">
+                Silvy's Kitchen
+              </span>
+              <span className="text-[9px] font-serif font-bold italic text-olive-deep tracking-wider opacity-90">
+                {HERITAGE_YEAR}
+              </span>
+            </div>
           </button>
 
           {/* Top Right: Circular Organic Parchment Shopping Bag Icon */}

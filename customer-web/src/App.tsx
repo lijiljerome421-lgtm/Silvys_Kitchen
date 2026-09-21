@@ -125,9 +125,16 @@ export default function App() {
     }
   };
 
+  const navigateToScreen = (screen: ScreenState) => {
+    setCurrentScreen(screen);
+    if (screen !== 'product-detail' && window.location.search) {
+      window.history.pushState(null, '', window.location.pathname);
+    }
+  };
+
   const handleEnterKitchen = () => {
     sessionStorage.setItem('silvys_intro_seen', 'true');
-    setCurrentScreen('home');
+    navigateToScreen('home');
   };
 
   // CART ADD METHOD: Identity MUST be product ID + selected unit
@@ -135,7 +142,8 @@ export default function App() {
     product: Product,
     selectedUnit?: string,
     selectedPrice?: number,
-    quantity: number = 1
+    quantity: number = 1,
+    overwrite: boolean = false
   ) => {
     const unitToUse = selectedUnit || product.unit || '500g';
     const priceToUse = selectedPrice !== undefined ? selectedPrice : product.price;
@@ -145,7 +153,9 @@ export default function App() {
       const existing = prevCart.find((item) => item.cartItemId === cartItemId);
       if (existing) {
         return prevCart.map((item) =>
-          item.cartItemId === cartItemId ? { ...item, quantity: item.quantity + quantity } : item
+          item.cartItemId === cartItemId
+            ? { ...item, quantity: overwrite ? quantity : item.quantity + quantity }
+            : item
         );
       }
       return [
@@ -191,8 +201,7 @@ export default function App() {
   };
 
   const handleBackFromProductDetail = () => {
-    setCurrentScreen('home');
-    window.history.pushState(null, '', window.location.pathname);
+    navigateToScreen('home');
   };
 
   const totalCartBadgeCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -209,11 +218,11 @@ export default function App() {
         product={selectedProduct}
         onBack={handleBackFromProductDetail}
         onAddToCart={(p, unit, price, qty) => {
-          handleAddToCart(p, unit, price, qty);
-          setCurrentScreen('cart');
+          handleAddToCart(p, unit, price, qty, true);
+          navigateToScreen('cart');
         }}
         cartCount={totalCartBadgeCount}
-        onOpenCart={() => setCurrentScreen('cart')}
+        onOpenCart={() => navigateToScreen('cart')}
       />
     );
   }
@@ -224,13 +233,13 @@ export default function App() {
       <div className="min-h-screen bg-parchment">
         <CartDrawer
           cart={cart}
-          onBack={() => setCurrentScreen('home')}
+          onBack={() => navigateToScreen('home')}
           onUpdateQuantity={handleUpdateQuantity}
           onRemoveItem={handleRemoveItem}
         />
         <BottomNav
           currentScreen="cart"
-          onNavigate={(screen) => setCurrentScreen(screen)}
+          onNavigate={(screen) => navigateToScreen(screen)}
           cartCount={totalCartBadgeCount}
         />
       </div>
@@ -250,8 +259,8 @@ export default function App() {
       {/* Compact Mobile Header */}
       <HeaderNav
         cartCount={totalCartBadgeCount}
-        onOpenCart={() => setCurrentScreen('cart')}
-        onGoHome={() => setCurrentScreen('home')}
+        onOpenCart={() => navigateToScreen('cart')}
+        onGoHome={() => navigateToScreen('home')}
       />
 
       {/* SCREEN 2: Home Page */}
@@ -261,14 +270,14 @@ export default function App() {
           <HeroSection
             promotions={promotions}
             products={products}
-            onExploreNow={() => setCurrentScreen('pickles')}
+            onExploreNow={() => navigateToScreen('pickles')}
             onSelectProduct={handleOpenProductDetails}
           />
 
           {/* Two Main Category Cards: PICKLES & SNACKS */}
           <CategorySection
-            onSelectPickles={() => setCurrentScreen('pickles')}
-            onSelectSnacks={() => setCurrentScreen('snacks')}
+            onSelectPickles={() => navigateToScreen('pickles')}
+            onSelectSnacks={() => navigateToScreen('snacks')}
           />
 
           {/* Featured Customer Reviews Carousel (Display Only) */}
@@ -286,7 +295,7 @@ export default function App() {
         <main className="flex-grow px-4 py-3 space-y-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setCurrentScreen('home')}
+              onClick={() => navigateToScreen('home')}
               className="p-1.5 rounded-full hover:bg-parchment-deep text-espresso"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -319,7 +328,7 @@ export default function App() {
         <main className="flex-grow px-4 py-3 space-y-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setCurrentScreen('home')}
+              onClick={() => navigateToScreen('home')}
               className="p-1.5 rounded-full hover:bg-parchment-deep text-espresso"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -350,7 +359,7 @@ export default function App() {
       {/* Fixed Mobile Bottom Navigation Bar */}
       <BottomNav
         currentScreen={currentScreen}
-        onNavigate={(screen) => setCurrentScreen(screen)}
+        onNavigate={(screen) => navigateToScreen(screen)}
         cartCount={totalCartBadgeCount}
       />
     </div>

@@ -20,3 +20,6 @@ backend/target/
 Thumbs.db
 
 tools/maven/
+
+# Cloudflare Wrangler runtime state & cache
+.wrangler/
